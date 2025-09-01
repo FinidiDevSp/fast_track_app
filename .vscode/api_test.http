@@ -1,0 +1,34 @@
+@env = dev
+@baseUrl = http://127.0.0.1:8000
+@ts = {{$timestamp}}
+@email = user{{ts}}@example.com
+@name = User {{ts}}
+
+### ─────────────────────────────
+### Health
+### @name health
+GET {{baseUrl}}/api/v1/health
+Accept: application/json
+
+### ─────────────────────────────
+### Crear usuario (usa datos aleatorios)
+### @name create_user
+POST {{baseUrl}}/api/v1/users
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "full_name": "{{name}}"
+}
+
+### ─────────────────────────────
+### Listar usuarios
+### @name list_users
+GET {{baseUrl}}/api/v1/users
+Accept: application/json
+
+### ─────────────────────────────
+### (Ejemplo) Reutilizar datos de la respuesta previa
+### Captura el id del usuario recién creado y lo muestra en un echo de prueba
+### @name show_created_id
+GET https://httpbin.org/anything?id={{create_user.response.body.$.id}}

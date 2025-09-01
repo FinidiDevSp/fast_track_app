@@ -1,0 +1,15 @@
+{
+	"python.testing.pytestEnabled": true,
+	"python.testing.pytestArgs": [
+		"tests"
+	],
+	"editor.formatOnSave": true,
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.python"
+	},
+	"http.proxy": "",
+	"http.proxySupport": "off",
+	"rest-client.enableSysProxy": false,
+	"rest-client.proxy": null,
+	"rest-client.timeoutinmilliseconds": 15000
+}
