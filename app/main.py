@@ -4,7 +4,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # IMPORTANTE: importa modelos para que estén en metadata
-from app import models  # noqa: F401 (registra User en SQLModel.metadata)
 from app.api.v1.routes import api_router
 from app.core.config import settings
 from app.db.session import init_db
