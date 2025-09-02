@@ -1,3 +1,5 @@
+import os
+import shutil
 from typing import Literal, Sequence, Type
 
 from fastapi import HTTPException
@@ -119,3 +121,63 @@ async def delete_name_by_slug(db: AsyncSession, kind: Kind, slug: str) -> None:
     obj = await get_name_by_slug(db, kind, slug)
     await db.delete(obj)
     await db.commit()
+
+
+async def import_folders_and_delete(db: AsyncSession, kind: Kind, root_path: str) -> int:
+    """Traverse `root_path`, collect folder names, upsert into table, then delete those folders.
+
+    Returns the number of records saved/updated.
+    """
+    if not os.path.exists(root_path) or not os.path.isdir(root_path):
+        raise HTTPException(status_code=400, detail="Path does not exist or is not a directory")
+
+    # Map slug -> list of absolute folder paths with that name
+    slug_to_paths: dict[str, list[str]] = {}
+    for current, dirs, _files in os.walk(root_path):
+        for d in dirs:
+            slug = d
+            abs_path = os.path.join(current, d)
+            slug_to_paths.setdefault(slug, []).append(abs_path)
+
+    if not slug_to_paths:
+        return 0
+
+    Model = _model_for(kind)
+
+    # Fetch existing slugs
+    slugs = list(slug_to_paths.keys())
+    res = await db.execute(select(Model).where(Model.slug.in_(slugs)))  # type: ignore[attr-defined]
+    existing_by_slug = {obj.slug: obj for obj in res.scalars().all()}  # type: ignore[attr-defined]
+
+    saved = 0
+    # Upsert
+    for slug in slugs:
+        description = f"Imported from {root_path}"
+        if slug in existing_by_slug:
+            obj = existing_by_slug[slug]
+            # Update description if different
+            if getattr(obj, "description", None) != description:
+                obj.description = description  # type: ignore[assignment]
+                saved += 1
+        else:
+            obj = Model(slug=slug, description=description)  # type: ignore[call-arg]
+            db.add(obj)
+            saved += 1
+
+    await db.commit()
+
+    # Delete directories collected
+    # Only delete paths under the provided root_path to be safe.
+    for paths in slug_to_paths.values():
+        for p in paths:
+            try:
+                # Safety: ensure path startswith root_path
+                rp = os.path.realpath(root_path)
+                pp = os.path.realpath(p)
+                if pp.startswith(rp):
+                    shutil.rmtree(pp, ignore_errors=True)
+            except Exception:
+                # Ignore individual deletion errors; continue with others
+                pass
+
+    return saved

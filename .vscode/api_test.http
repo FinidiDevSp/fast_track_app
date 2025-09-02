@@ -92,3 +92,27 @@ Accept: application/json
 ### @name list_ban_after
 GET {{baseUrl}}/api/v1/names/ban?offset=0&limit=10
 Accept: application/json
+
+### =============================================================
+### Importar nombres desde una ruta y borrar carpetas
+@importPath = c:\anasinf
+
+### Crea registros en allowed_names con los nombres de carpetas bajo importPath
+### @name import_allowed
+POST {{baseUrl}}/api/v1/names/import-folders/allow
+Content-Type: application/json
+Accept: application/json
+
+{
+  "path": "{{importPath}}"
+}
+
+### Crea registros en ban_names con los nombres de carpetas bajo importPath
+### @name import_ban
+POST {{baseUrl}}/api/v1/names/import-folders/ban
+Content-Type: application/json
+Accept: application/json
+
+{
+  "path": "{{importPath}}"
+}

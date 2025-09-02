@@ -1,7 +1,7 @@
-from typing import Annotated, AsyncGenerator
+from typing import Annotated, AsyncGenerator, Literal
 
 from fastapi import APIRouter, Depends, Path, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import AsyncSessionLocal
@@ -12,6 +12,7 @@ from app.services.name_service import (
     delete_name_by_slug,
     get_name,
     get_name_by_slug,
+    import_folders_and_delete,
     list_names,
     update_name,
     update_name_by_slug,
@@ -81,3 +82,26 @@ async def update_name_by_slug_ep(kind: Kind, slug: str, payload: NameUpdate, db:
 async def delete_name_by_slug_ep(kind: Kind, slug: str, db: DBSession):
     await delete_name_by_slug(db, kind, slug)
     return {"ok": True}
+
+
+class ImportFoldersRequest(BaseModel):
+    path: str = Field(min_length=1, description="Ruta absoluta o relativa a recorrer")
+
+
+class ImportResult(BaseModel):
+    ok: bool
+    saved: int
+
+
+def _normalize_kind(kind: str) -> Kind:
+    k = kind.lower()
+    return "allowed" if k in {"allow", "allowed"} else "ban"
+
+
+@router.post("/import-folders/{kind}", response_model=ImportResult)
+async def import_folders(
+    kind: Literal["allow", "allowed", "ban"], payload: ImportFoldersRequest, db: DBSession
+):
+    norm = _normalize_kind(kind)
+    saved = await import_folders_and_delete(db, norm, payload.path)
+    return {"ok": True, "saved": saved}
