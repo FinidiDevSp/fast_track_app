@@ -12,7 +12,14 @@ class Health(BaseModel):
     status: str
 
 
-@api_router.get("/health", response_model=Health)
+@api_router.get(
+    "/health",
+    response_model=Health,
+    response_model_exclude_none=True,
+    tags=["system"],
+    summary="Health check",
+    description="Simple endpoint to verify the API is up.",
+)
 async def health():
     return {"status": "ok"}
 

@@ -9,11 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.name_list import AllowedName, BanName
 
-Kind = Literal["allowed", "ban"]
+Kind = Literal["allowlist", "denylist"]
 
 
 def _model_for(kind: Kind) -> Type[AllowedName] | Type[BanName]:
-    return AllowedName if kind == "allowed" else BanName
+    return AllowedName if kind == "allowlist" else BanName
+
+
+def _norm_slug(slug: str) -> str:
+    s = (slug or "").strip().lower()
+    return s
 
 
 async def list_names(
@@ -46,6 +51,7 @@ async def create_name(
     db: AsyncSession, kind: Kind, slug: str, description: str
 ) -> AllowedName | BanName:
     Model = _model_for(kind)
+    slug = _norm_slug(slug)
     obj = Model(slug=slug, description=description)  # type: ignore[call-arg]
     db.add(obj)
     try:
@@ -88,6 +94,7 @@ async def delete_name(db: AsyncSession, kind: Kind, item_id: int) -> None:
 # Slug- based helpers (avoid needing IDs)
 async def get_name_by_slug(db: AsyncSession, kind: Kind, slug: str) -> AllowedName | BanName:
     Model = _model_for(kind)
+    slug = _norm_slug(slug)
     res = await db.execute(select(Model).where(Model.slug == slug))  # type: ignore[attr-defined]
     obj = res.scalars().first()
     if not obj:
@@ -101,7 +108,7 @@ async def update_name_by_slug(
     obj = await get_name_by_slug(db, kind, slug)
     changed = False
     if new_slug is not None:
-        obj.slug = new_slug  # type: ignore[assignment]
+        obj.slug = _norm_slug(new_slug)  # type: ignore[assignment]
         changed = True
     if description is not None:
         obj.description = description  # type: ignore[assignment]
@@ -135,7 +142,9 @@ async def import_folders_and_delete(db: AsyncSession, kind: Kind, root_path: str
     slug_to_paths: dict[str, list[str]] = {}
     for current, dirs, _files in os.walk(root_path):
         for d in dirs:
-            slug = d
+            slug = _norm_slug(d)
+            if not slug:
+                continue
             abs_path = os.path.join(current, d)
             slug_to_paths.setdefault(slug, []).append(abs_path)
 

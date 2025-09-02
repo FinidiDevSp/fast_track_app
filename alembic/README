@@ -1,0 +1,8 @@
+This directory contains Alembic migrations.
+Run with:
+
+  alembic upgrade head
+
+Configuration uses app.core.config.Settings.DATABASE_URL. For sqlite+aiosqlite URLs,
+the async driver is converted to sync (sqlite) for migrations.
+
