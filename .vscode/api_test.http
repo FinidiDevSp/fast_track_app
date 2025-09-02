@@ -1,34 +1,94 @@
 @env = dev
 @baseUrl = http://127.0.0.1:8000
+
+# Variables aleatorias
 @ts = {{$timestamp}}
 @email = user{{ts}}@example.com
 @name = User {{ts}}
+@allowedSlug = allowed-{{ts}}
+@allowedDesc = Allowed item {{ts}}
+@banSlug = ban-{{ts}}
+@banDesc = Banned item {{ts}}
 
-### ─────────────────────────────
 ### Health
 ### @name health
 GET {{baseUrl}}/api/v1/health
 Accept: application/json
 
-### ─────────────────────────────
-### Crear usuario (usa datos aleatorios)
-### @name create_user
-POST {{baseUrl}}/api/v1/users
-Content-Type: application/json
+### Echo de variables
+### @name echo_vars
+GET https://httpbin.org/anything?email={{email}}&allowed={{allowedSlug}}&ban={{banSlug}}
 
-{
-  "email": "{{email}}",
-  "full_name": "{{name}}"
-}
-
-### ─────────────────────────────
-### Listar usuarios
-### @name list_users
-GET {{baseUrl}}/api/v1/users
+### =============================================================
+### Names: Allowed list
+### @name list_allowed
+GET {{baseUrl}}/api/v1/names/allowed?q=allowed&offset=0&limit=5
 Accept: application/json
 
-### ─────────────────────────────
-### (Ejemplo) Reutilizar datos de la respuesta previa
-### Captura el id del usuario recién creado y lo muestra en un echo de prueba
-### @name show_created_id
-GET https://httpbin.org/anything?id={{create_user.response.body.$.id}}
+### @name create_allowed
+POST {{baseUrl}}/api/v1/names/allowed
+Content-Type: application/json
+Accept: application/json
+
+{
+  "slug": "{{allowedSlug}}",
+  "description": "{{allowedDesc}}"
+}
+
+### @name get_allowed
+GET {{baseUrl}}/api/v1/names/allowed/slug/{{allowedSlug}}
+Accept: application/json
+
+### @name update_allowed
+PUT {{baseUrl}}/api/v1/names/allowed/slug/{{allowedSlug}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "description": "Allowed item updated {{ts}}"
+}
+
+### @name delete_allowed
+DELETE {{baseUrl}}/api/v1/names/allowed/slug/{{allowedSlug}}
+Accept: application/json
+
+### @name list_allowed_after
+GET {{baseUrl}}/api/v1/names/allowed?offset=0&limit=10
+Accept: application/json
+
+### =============================================================
+### Names: Ban list
+### @name list_ban
+GET {{baseUrl}}/api/v1/names/ban?q=ban&offset=0&limit=5
+Accept: application/json
+
+### @name create_ban
+POST {{baseUrl}}/api/v1/names/ban
+Content-Type: application/json
+Accept: application/json
+
+{
+  "slug": "{{banSlug}}",
+  "description": "{{banDesc}}"
+}
+
+### @name get_ban
+GET {{baseUrl}}/api/v1/names/ban/slug/{{banSlug}}
+Accept: application/json
+
+### @name update_ban
+PUT {{baseUrl}}/api/v1/names/ban/slug/{{banSlug}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "description": "Banned item updated {{ts}}"
+}
+
+### @name delete_ban
+DELETE {{baseUrl}}/api/v1/names/ban/slug/{{banSlug}}
+Accept: application/json
+
+### @name list_ban_after
+GET {{baseUrl}}/api/v1/names/ban?offset=0&limit=10
+Accept: application/json
